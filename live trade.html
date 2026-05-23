@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>reale live Trading</title>
+<style>
+* { box-sizing: border-box; }
+body { 
+  background: #0d1117; 
+  color: #fff; 
+  font-family: 'Segoe UI', Arial, sans-serif; 
+  margin: 0; 
+  padding: 10px; 
+  overscroll-behavior: none;
+}
+.container { max-width: 900px; margin: 0 auto; }
+.header {
+  text-align: center;
+  margin-bottom: 15px;
+  background: linear-gradient(90deg, #ff9800, #ffc107);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 18px;
+  font-weight: bold;
+}
+.top-bar { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.balance { font-size: 16px; color: #4caf50; font-weight: bold; }
+.profit-balance { font-size: 14px; color: #ff9800; }
+.price { font-size: 18px; color: #fff; font-weight: bold; }
+.timer { font-size: 16px; color: #ff9800; }
+.top-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.top-buttons button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-deposit { background: linear-gradient(135deg, #4caf50, #66bb6a); color: white; }
+.btn-withdraw { background: linear-gradient(135deg, #2196f3, #42a5f5); color: white; }
+.btn-history { background: linear-gradient(135deg, #ff9800, #ffb74d); color: white; }
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+  touch-action: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+canvas { 
+  width: 100%; 
+  height: 100%; 
+  border-radius: 12px; 
+}
+.controls { 
+  display: flex; 
+  gap: 10px; 
+  margin: 15px 0; 
+  flex-wrap: wrap;
+}
+.controls-row2 {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+select, input, button { 
+  padding: 10px; 
+  border-radius: 6px; 
+  border: 1px solid #333; 
+  background: #1e222d; 
+  color: white; 
+  font-size: 15px;
+}
+select, input { width: 100px; }
+.controls button, .controls-row2 button { 
+  flex: 1; 
+  border: none; 
+  font-weight: bold;
+  cursor: pointer;
+}
+.btn-up { background: linear-gradient(135deg, #4caf50, #66bb6a); }
+.btn-down { background: linear-gradient(135deg, #f44336, #e57373); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.note { 
+  margin-top: 10px; 
+  padding: 10px; 
+  background: #1e222d; 
+  border-radius: 6px; 
+  font-size: 13px; 
+  color: #aaa; 
+  border-left: 3px solid #ff9800;
+}
+.popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+}
+.popup.active { display: flex; }
+.popup-box {
+  background: #1e222d;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 350px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+}
+.popup-box h3 {
+  margin: 0 0 15px 0;
+  background: linear-gradient(90deg, #ff9800, #ffc107);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.popup-box label {
+  display: block;
+  margin: 10px 0 5px 0;
+  font-size: 14px;
+  color: #ccc;
+}
+.popup-box input {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.popup-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+.popup-buttons button {
+  flex: 1;
+}
+.btn-confirm { background: linear-gradient(135deg, #4caf50, #66bb6a); }
+.btn-cancel { background: linear-gradient(135deg, #f44336, #e57373); }
+.info-text {
+  background: #2a2e39;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 15px 0 0 0;
+  font-size: 13px;
+  color: #ff9800;
+  text-align: center;
+}
+.history-item {
+  background: #2a2e39;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.history-item .type {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+.history-item.deposit .type { color: #4caf50; }
+.history-item.withdraw .type { color: #2196f3; }
+.history-item.win .type { color: #4caf50; }
+.history-item.loss .type { color: #f44336; }
+.history-item .date {
+  color: #888;
+  font-size: 11px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">ট্রেড করে ইনকাম করো - Real Trading</div>
+  
+  <div class="top-bar">
+    <div class="balance-info">
+      <div class="balance">Total: $<span id="balance">0.00</span></div>
+      <div class="profit-balance">Profit: $<span id="profitBalance">0.00</span></div>
+      <div class="price">Price: <span id="price">184.685</span></div>
+      <div class="timer">Time: <span id="timer">00:00</span></div>
+    </div>
+    <div class="top-buttons">
+      <button class="btn-history" onclick="openPopup('history')">History</button>
+      <button class="btn-withdraw" onclick="openPopup('withdraw')">Withdraw</button>
+      <button class="btn-deposit" onclick="openPopup('deposit')">Deposit</button>
+    </div>
+  </div>
+
+  <div class="chart-wrapper" id="chartWrapper">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="controls">
+    <select id="tradeTime">
+      <option value="30">30s</option>
+      <option value="60" selected>1m</option>
+      <option value="120">2m</option>
+      <option value="300">5m</option>
+    </select>
+    <input type="number" id="amount" value="10" min="1" />
+  </div>
+
+  <div class="controls-row2">
+    <button class="btn-up" id="btnUp" onclick="placeTrade('up')">UP</button>
+    <button class="btn-down" id="btnDown" onclick="placeTrade('down')">DOWN</button>
+  </div>
+
+  <div class="note">
+    <b>নোট:</b> Win chance 25%, Win হলে 60% প্রফিট। Loss হলে trade amount + তার 10% profit থেকে কাটবে। Withdraw করতে main balance >= withdraw amount হতে হবে।
+  </div>
+</div>
+
+<!-- Deposit Popup -->
+<div class="popup" id="depositPopup">
+  <div class="popup-box">
+    <h3>live Deposit</h3>
+    <label>1. Amount দাও</label>
+    <input type="number" id="depAmount" placeholder="Minimum 900" min="900">
+    <label>2. Last 4 digit দাও</label>
+    <input type="number" id="depLast4" placeholder="যেকোনো 4 digit" maxlength="4">
+    <div class="popup-buttons">
+      <button class="btn-cancel" onclick="closePopup('deposit')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmDeposit()">Confirm</button>
+    </div>
+    <div class="info-text">
+      নিচের নাম্বারে Nagad Send Money করো:<br>
+      <b style="font-size:16px;">+8801819811370</b><br>
+      <small>Minimum 900 টাকা পাঠিয়ে Last 4 digit দিয়ে Confirm করো</small>
+    </div>
+  </div>
+</div>
+
+<!-- Withdraw Popup -->
+<div class="popup" id="withdrawPopup">
+  <div class="popup-box">
+    <h3>live Withdraw</h3>
+    <label>Available Profit: $<span id="availableProfit">0.00</span></label>
+    <label>1. কত টাকা উইথড্র করবে?</label>
+    <input type="number" id="withAmount" placeholder="যেমন: 200" min="10">
+    <label>2. তোমার Nagad নাম্বার দাও</label>
+    <input type="number" id="withNumber" placeholder="যেমন: 01812345678">
+    <div class="popup-buttons">
+      <button class="btn-cancel" onclick="closePopup('withdraw')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmWithdraw()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Popup -->
+<div class="popup" id="historyPopup">
+  <div class="popup-box">
+    <h3>Transaction History</h3>
+    <div id="historyList" style="max-height: 400px; overflow-y: auto;">
+    </div>
+    <div class="popup-buttons">
+      <button class="btn-cancel" onclick="closePopup('history')" style="width: 100%;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let balance = 0;
+let profitBalance = 0;
+let candles = [];
+let trades = [];
+let history = [];
+let canvas = document.getElementById('chart');
+let ctx = canvas.getContext('2d');
+canvas.width = canvas.offsetWidth * 2;
+canvas.height = 700;
+
+let price = 184.685;
+let tickCounter = 0;
+let visibleCandles = 25;
+let zoomLevel = 1;
+const WHATSAPP_NUMBER = "601123192967";
+const WIN_RATE = 0.25;  // 40% থেকে 25% করা হলো
+const PROFIT_RATE = 0.6;
+
+loadData();
+
+function saveData() {
+  localStorage.setItem('tradeBalance', balance);
+  localStorage.setItem('tradeProfit', profitBalance);
+  localStorage.setItem('tradeHistory', JSON.stringify(history));
+  localStorage.setItem('tradeCandles', JSON.stringify(candles.slice(-60)));
+}
+
+function loadData() {
+  balance = parseFloat(localStorage.getItem('tradeBalance')) || 0;
+  profitBalance = parseFloat(localStorage.getItem('tradeProfit')) || 0;
+  history = JSON.parse(localStorage.getItem('tradeHistory')) || [];
+  let savedCandles = JSON.parse(localStorage.getItem('tradeCandles')) || [];
+  
+  if(savedCandles.length > 0) {
+    candles = savedCandles;
+    price = candles[candles.length - 1].close;
+  } else {
+    for(let i = 0; i < 60; i++) {
+      let change = (Math.random() - 0.5) * 0.001;
+      let open = price;
+      price += change;
+      let close = price;
+      let high = Math.max(open, close) + Math.random() * 0.0005;
+      let low = Math.min(open, close) - Math.random() * 0.0005;
+      candles.push({open, high, low, close, time: Date.now() - (60-i)*1000});
+    }
+  }
+  updateBalanceDisplay();
+}
+
+function addHistory(type, amount, detail) {
+  let time = new Date().toLocaleTimeString();
+  history.unshift({
+    type: type,
+    amount: amount,
+    detail: detail,
+    time: time
+  });
+  if(history.length > 50) history.pop();
+  saveData();
+}
+
+function updateBalanceDisplay() {
+  document.getElementById('balance').innerText = balance.toFixed(2);
+  document.getElementById('profitBalance').innerText = profitBalance.toFixed(2);
+  document.getElementById('availableProfit').innerText = profitBalance.toFixed(2);
+}
+
+let wrapper = document.getElementById('chartWrapper');
+let initialDistance = null;
+
+wrapper.addEventListener('touchstart', (e) => {
+  if(e.touches.length === 2) {
+    initialDistance = getDistance(e.touches[0], e.touches[1]);
+  }
+});
+
+wrapper.addEventListener('touchmove', (e) => {
+  if(e.touches.length === 2 && initialDistance) {
+    e.preventDefault();
+    let currentDistance = getDistance(e.touches[0], e.touches[1]);
+    let scale = currentDistance / initialDistance;
+    
+    zoomLevel = Math.min(Math.max(zoomLevel * scale, 0.5), 3);
+    visibleCandles = Math.floor(25 / zoomLevel);
+    
+    initialDistance = currentDistance;
+    drawChart();
+  }
+});
+
+function getDistance(touch1, touch2) {
+  let dx = touch1.clientX - touch2.clientX;
+  let dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function drawChart() {
+  let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#1a1f2e');
+  gradient.addColorStop(1, '#0d1117');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.strokeStyle = '#2B2B43';
+  ctx.lineWidth = 1;
+  for(let i = 0; i < 6; i++) {
+    let y = i * canvas.height / 5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+  
+  let startIndex = Math.max(0, candles.length - visibleCandles);
+  let visibleData = candles.slice(startIndex);
+  
+  let minPrice = Math.min(...visibleData.map(c => c.low)) - 0.002;
+  let maxPrice = Math.max(...visibleData.map(c => c.high)) + 0.002;
+  let priceRange = maxPrice - minPrice;
+  let candleWidth = canvas.width / visibleData.length;
+  
+  visibleData.forEach((c, i) => {
+    let x = i * candleWidth + candleWidth/2;
+    let openY = canvas.height - ((c.open - minPrice) / priceRange) * canvas.height;
+    let closeY = canvas.height - ((c.close - minPrice) / priceRange) * canvas.height;
+    let highY = canvas.height - ((c.high - minPrice) / priceRange) * canvas.height;
+    let lowY = canvas.height - ((c.low - minPrice) / priceRange) * canvas.height;
+    
+    let isUp = c.close > c.open;
+    ctx.strokeStyle = isUp ? '#4caf50' : '#f44336';
+    ctx.fillStyle = isUp ? '#4caf50' : '#f44336';
+    ctx.lineWidth = 3;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, highY);
+    ctx.lineTo(x, lowY);
+    ctx.stroke();
+    
+    let bodyHeight = Math.abs(openY - closeY);
+    let bodyY = Math.min(openY, closeY);
+    ctx.fillRect(x - candleWidth/2.5, bodyY, candleWidth/1.3, bodyHeight || 3);
+  });
+  
+  let currentY = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
+  ctx.strokeStyle = '#ff9800';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(0, currentY);
+  ctx.lineTo(canvas.width, currentY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  trades.forEach(trade => {
+    let tradeIndex = trade.index - startIndex;
+    if(tradeIndex >= 0 && tradeIndex < visibleData.length) {
+      let x = (tradeIndex / visibleData.length) * canvas.width;
+      let y = canvas.height - ((trade.price - minPrice) / priceRange) * canvas.height;
+      
+      ctx.fillStyle = trade.type === 'up' ? '#4caf50' : '#f44336';
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(trade.type === 'up' ? '▲' : '▼', x, y + 6);
+      
+      if(trade.active) {
+        ctx.fillStyle = '#ff9800';
+        ctx.font = '14px Arial';
+        ctx.fillText(trade.timeLeft + 's', x, y - 20);
+      }
+    }
+  });
+  
+  document.getElementById('price').innerText = price.toFixed(5);
+}
+
+function updatePrice() {
+  tickCounter++;
+  let change = (Math.random() - 0.5) * 0.0005;
+  price += change;
+  
+  if(tickCounter % 8 === 0) {
+    let lastCandle = candles[candles.length - 1];
+    let newCandle = {
+      open: lastCandle.close,
+      close: price,
+      high: Math.max(lastCandle.close, price) + Math.random() * 0.0005,
+      low: Math.min(lastCandle.close, price) - Math.random() * 0.0005,
+      time: Date.now()
+    };
+    candles.push(newCandle);
+    if(candles.length > 200) candles.shift();
+    saveData();
+  }
+  
+  trades.forEach(trade => {
+    if(trade.active) {
+      trade.timeLeft--;
+      if(trade.timeLeft <= 0) {
+        trade.active = false;
+        settleTrade(trade);
+      }
+    }
+  });
+  
+  updateTimer();
+  drawChart();
+}
+
+function updateTimer() {
+  let now = new Date();
+  let timeStr = now.getMinutes().toString().padStart(2, '0') + ':' + 
+                now.getSeconds().toString().padStart(2, '0');
+  document.getElementById('timer').innerText = timeStr;
+}
+
+function placeTrade(direction) {
+  let amount = parseFloat(document.getElementById('amount').value);
+  let tradeTime = parseInt(document.getElementById('tradeTime').value);
+  
+  if(amount > balance) return alert('Balance কম! Deposit করো');
+  if(trades.some(t => t.active)) return alert('আগের ট্রেড শেষ হতে দাও!');
+  
+  balance -= amount;
+  updateBalanceDisplay();
+  
+  let isWin = Math.random() < WIN_RATE;
+  
+  let trade = {
+    type: direction,
+    price: price,
+    amount: amount,
+    timeLeft: tradeTime,
+    active: true,
+    index: candles.length - 1,
+    entryTime: Date.now(),
+    isWin: isWin
+  };
+  trades.push(trade);
+  saveData();
+  
+  document.getElementById('btnUp').disabled = true;
+  document.getElementById('btnDown').disabled = true;
+  
+  setTimeout(() => {
+    document.getElementById('btnUp').disabled = false;
+    document.getElementById('btnDown').disabled = false;
+  }, 1000);
+}
+
+function settleTrade(trade) {
+  let finalPrice = price;
+  
+  if(trade.isWin) {
+    let profit = trade.amount * PROFIT_RATE;
+    balance += trade.amount + profit;
+    profitBalance += profit;
+    addHistory('win', profit, `${trade.type.toUpperCase()}: Entry ${trade.price.toFixed(5)} → Exit ${finalPrice.toFixed(5)}`);
+    alert(`Win! +$${profit.toFixed(2)}\nEntry: ${trade.price.toFixed(5)}\nExit: ${finalPrice.toFixed(5)}`);
+  } else {
+    let profitDeduction = trade.amount * 0.1;
+    profitBalance -= profitDeduction;
+    if(profitBalance < 0) profitBalance = 0;
+    
+    addHistory('loss', trade.amount, `${trade.type.toUpperCase()}: Entry ${trade.price.toFixed(5)} → Exit ${finalPrice.toFixed(5)}. Profit Deduction: $${profitDeduction.toFixed(2)}`);
+    alert(`Loss! -$${trade.amount.toFixed(2)}\nProfit থেকে কাটা হলো: $${profitDeduction.toFixed(2)}\nEntry: ${trade.price.toFixed(5)}\nExit: ${finalPrice.toFixed(5)}`);
+  }
+  
+  updateBalanceDisplay();
+  setTimeout(() => {
+    trades = trades.filter(t => t !== trade);
+  }, 3000);
+}
+
+function openPopup(type) {
+  document.getElementById(type + 'Popup').classList.add('active');
+  if(type === 'history') {
+    loadHistory();
+  }
+}
+
+function closePopup(type) {
+  document.getElementById(type + 'Popup').classList.remove('active');
+  document.getElementById('depAmount').value = '';
+  document.getElementById('depLast4').value = '';
+  document.getElementById('withAmount').value = '';
+  document.getElementById('withNumber').value = '';
+}
+
+function loadHistory() {
+  let html = '';
+  if(history.length === 0) {
+    html = '<div style="text-align:center; color:#888;">কোনো হিস্টরি নেই</div>';
+  } else {
+    history.forEach(item => {
+      html += `
+        <div class="history-item ${item.type}">
+          <div class="type">${item.type.toUpperCase()}: $${item.amount.toFixed(2)}</div>
+          <div>${item.detail}</div>
+          <div class="date">${item.time}</div>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('historyList').innerHTML = html;
+}
+
+function confirmDeposit() {
+  let amount = parseFloat(document.getElementById('depAmount').value);
+  let last4 = document.getElementById('depLast4').value;
+  
+  if(!amount || amount < 900) return alert('Minimum 900 টাকা দিতে হবে');
+  if(!last4 || last4.length !== 4) return alert('Last 4 digit দাও');
+  
+  balance += amount;
+  updateBalanceDisplay();
+  addHistory('deposit', amount, `Last 4: ${last4}`);
+  saveData();
+  
+  alert(`Deposit Successful!\n${amount} টাকা Balance এ যোগ হয়েছে`);
+  closePopup('deposit');
+}
+
+function confirmWithdraw() {
+  let amount = parseFloat(document.getElementById('withAmount').value);
+  let number = document.getElementById('withNumber').value;
+  
+  if(!amount || amount < 10) return alert('Minimum 10 টাকা উইথড্র করতে হবে');
+  if(amount > profitBalance) return alert('Profit Balance এত টাকা নাই');
+  if(amount > balance) return alert('Main Balance এ withdraw amount এর সমান বা বেশি টাকা থাকতে হবে!');
+  if(!number || number.length < 10) return alert('ঠিক Nagad নাম্বার দাও');
+  
+  profitBalance -= amount;
+  balance -= amount;
+  updateBalanceDisplay();
+  addHistory('withdraw', amount, `Nagad: ${number}`);
+  saveData();
+  
+  let message = `উইথড্র রিকোয়েস্ট\nAmount: ${amount} টাকা\nNagad Number: ${number}`;
+  let whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  
+  window.open(whatsappUrl, '_blank');
+  
+  alert(`Withdraw Request Sent!\n${amount} টাকা Profit Balance থেকে কাটা হয়েছে`);
+  closePopup('withdraw');
+}
+
+setInterval(updatePrice, 500);
+drawChart();
+</script>
+</body>
+</html>
